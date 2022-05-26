@@ -5,7 +5,6 @@ const {User, Watchlist} = require("../models")
 
 
 class Controller {
-  
   static async getNews(req, res, next) {
     try {
       let response = await axios({
@@ -31,6 +30,7 @@ class Controller {
       next(error);
     }
   }
+  
 
   static async coinDetail(req, res, next) {
     try {
@@ -44,6 +44,29 @@ class Controller {
     } catch (error) {
       next(error);
     }
+  }
+
+  static async compareDetails(req, res, next) {
+    try {
+      const {coin1, coin2} = req.query
+    
+      let response1 = await axios({
+        method: "get",
+        url: `https://api.coingecko.com/api/v3/coins/${coin1}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`,
+      })
+      let response2 = await axios({
+        method: "get",
+        url: `https://api.coingecko.com/api/v3/coins/${coin2}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`,
+      });
+  
+      res.status(200).json({
+        coin1: response1.data,
+        coin2: response2.data
+      })
+    } catch (error) {
+      next(error)
+    }
+
   }
 
   static async coinHistory(req, res, next) {
@@ -65,6 +88,39 @@ class Controller {
     } catch (error) {
       next(error);
     }
+  }
+
+  static async compareHistory(req, res, next) {
+    try {
+      const {coin1 = 'bitcoin', coin2 = 'ethereum', dates = 1} = req.query
+    
+      let response1 = await axios({
+        method: "get",
+        url: `https://api.coingecko.com/api/v3/coins/${coin1}/market_chart?vs_currency=usd&days=${dates}`,
+      })
+      let response2 = await axios({
+        method: "get",
+        url: `https://api.coingecko.com/api/v3/coins/${coin2}/market_chart?vs_currency=usd&days=${dates}`,
+      });
+      
+      let prices1 = response1.data.prices.map((price) => {
+        let date = new Date(price[0])
+        return [date, price[1]]
+      });
+
+      let prices2 = response2.data.prices.map((price) => {
+        let date = new Date(price[0])
+        return [date, price[1]]
+      });
+
+      res.status(200).json([
+        {name: coin1, data: prices1},
+        {name: coin2, data: prices2},
+      ])
+    } catch (error) {
+      next(error)
+    }
+
   }
 
   static async register(req, res, next) {

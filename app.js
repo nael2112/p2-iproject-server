@@ -6,14 +6,12 @@ var PORT = 3000;
 app.use(express.urlencoded({extended:false}));
 app.use(express.json());
 app.use(cors())
+const errorHandler = require("./middlewares/errorHandler");
    
 app.use("/", require("./routes/index"));
 
-app.use((err, req, res, next) => {
-  console.log(err.message)
+app.use(errorHandler)
 
-  res.status(500).json({message: "Error"})
-})
 app.listen(PORT, function(err){
     if (err) console.log(err);
     console.log("Server listening on PORT", PORT);
