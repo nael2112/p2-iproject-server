@@ -1,4 +1,8 @@
 const axios = require("axios");
+const { compareSync } = require("bcrypt");
+const { sign } = require("jsonwebtoken");
+const {User, Watchlist} = require("../models")
+
 
 class Controller {
   static async getCoins(req, res, next) {
@@ -47,6 +51,64 @@ class Controller {
       res.status(200).json(prices);
     } catch (error) {
       next(error);
+    }
+  }
+
+  static async signup(req, res, next) {
+    try {
+      const {username, email, password} = req.body 
+      if (!username) {
+        throw new Error("Username cannot be empty")
+      }
+      if (!email) {
+        throw new Error("Email cannot be empty")
+      }
+      if (!password) {
+        throw new Error("Password cannot be empty")
+      }
+
+      const newUser = await User.create({
+        username,
+        email,
+        password
+      })
+
+
+      res.status(201).json({id: newUser.id, username: newUser.username})
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  static async login(req, res, next) {
+    try {
+      const { email, password } = req.body;
+
+      const foundUser = await User.findOne({
+        where: {
+          email,
+        },
+      });
+      if (!foundUser) {
+        throw new Error("Invalid Email/Password");
+      }
+      const correctPassword = compareSync(password, foundUser.password);
+
+      if (!correctPassword) {
+        throw new Error("Invalid Email/Password");
+      }
+
+      const payload = {
+        id: foundUser.id,
+        username: foundUser.username,
+      };
+      const accessToken = sign(payload, "secret");
+
+      res.status(200).json({
+        access_token: accessToken,
+      });
+    } catch (err) {
+      next(err);
     }
   }
 }
